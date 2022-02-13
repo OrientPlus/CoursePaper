@@ -5,10 +5,7 @@
 int main()
 {
 	DES des;
-	des.get_data();
-	//des.printBinary();
-
-
+	des.encrypt();
 	system("pause");
 	return 0;
 }
