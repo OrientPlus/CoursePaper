@@ -14,11 +14,12 @@ using namespace std;
 class DES
 {
 public:
+	DES();
 	void encrypt();
 
 	void get_data();
 
-	int64_t getSizeFile(ifstream& in);
+	int64_t getSizeFile(ifstream *in);
 
 	void initial_permutation(int it);
 	void finaly_permutation(int it);
@@ -28,8 +29,12 @@ public:
 	void key_extension();
 
 	int get_dec(int tmp);
+
+	void print_data();
 	
 private:
+	ifstream in;
+	ofstream out;
 	int64_t fileSize = 0;
 	bitset<64> data[10];
 	bitset<64> key = ( 0,1,1,0,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,1,1,1,1,1,0,0,1,1,1,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,1,1,0,1,1,1,1,1,1,0,0 );
