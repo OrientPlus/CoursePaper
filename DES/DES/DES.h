@@ -15,11 +15,12 @@ class DES
 {
 public:
 	DES();
+
 	void encrypt();
 
 	void get_data();
 
-	int64_t getSizeFile(ifstream *in);
+	int64_t getSizeFile();
 
 	void initial_permutation(int it);
 	void finaly_permutation(int it);
