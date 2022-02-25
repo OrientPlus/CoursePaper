@@ -7,6 +7,7 @@
 #include <bitset>
 #include <vector>
 #include <windows.h>
+#include <cmath>
 
 
 using namespace std;
@@ -32,15 +33,20 @@ public:
 	int get_dec(int tmp);
 
 	void print_data();
+
+	char *convert_bin_to_hex(int _i);
+
+	int64_t sizeEncrFile();
 	
 private:
 	ifstream in;
 	ofstream out;
 	int64_t fileSize = 0;
 	bitset<64> data[10];
-	bitset<64> key = ( 0,1,1,0,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,1,1,1,1,1,0,0,1,1,1,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,1,1,0,1,1,1,1,1,1,0,0 );
+	bitset<64> key = 1498011;
 	bitset<48> RoundKey[16];
 	bitset<32> leftBlock, rightBlock;
 	string path;
 	bool bigSize=false;
+	int receivedBlocks = 0;
 };

@@ -1,13 +1,21 @@
 #include "DES.h"
+#include "chrono"
 
 DES::DES()
 {
-	path = "C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/data2.txt";
-
+	path = "C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/dataPng.hg";
+	int choise = 1;
 	//открытие файла для чтения иходного текста и файла для записи шифротекста
-	cout << "Enter path data: ";
+	cout << "1 - Use default path (C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/data.txt) \n2 - Enter path\n";
 	
-	ifstream in(path, std::ios::binary);
+	//cin >> choise;
+	if (choise == 1) ifstream in(path, std::ios::binary);
+	else {
+		cout << "\nEnter path data: ";
+		cin >> path;
+		ifstream in(path, std::ios::binary);
+	}
+	
 	if (!in.is_open())
 	{
 		cout << "\nFile cannot open!" << endl;
@@ -21,7 +29,6 @@ DES::DES()
 	in.close();
 }
 
-
 void DES::get_data()
 {
 	ifstream in(path, std::ios::binary);
@@ -29,20 +36,39 @@ void DES::get_data()
 	int j = 0, it = 0;
 	static int file_pos = 0;
 	in.seekg(file_pos);
-	//запись исходного текста в 10 битсетов
-	while (in.get(ch) && it<10)
+	
+	if (bigSize) //Если файл большой считает 10 блоков, иначе считает (размер файла в Байтах/размер блока+1) блоков
 	{
-		file_pos++;
-		if (j >= 64) {
-			it++; j = 0;
-		}
-		for (int i = 0; i <= 7; i++)
+		while (in.get(ch) && it < 10)
 		{
-			unsigned int bit = (((int)ch & (int)pow(2, i)) > 0 ? 1 : 0);
-			data[it].set(j, bit);
-			j++;
+			file_pos++;
+			if (j >= 64) {
+				it++; j = 0;
+			}
+			for (int i = 0; i <= 7; i++)
+			{
+				unsigned int bit = (((int)ch & (int)pow(2, i)) > 0 ? 1 : 0);
+				data[it].set(j, bit);
+				j++;
+			}
 		}
 	}
+	else {
+		while (in.get(ch) && it < fileSize/64+1)
+		{
+			file_pos++;
+			if (j >= 64) {
+				it++; j = 0;
+			}
+			for (int i = 0; i <= 7; i++)
+			{
+				unsigned int bit = (((int)ch & (int)pow(2, i)) > 0 ? 1 : 0);
+				data[it].set(j, bit);
+				j++;
+			}
+		}
+	}
+	receivedBlocks = it;
 	in.close();
 }
 
@@ -52,7 +78,7 @@ int64_t DES::getSizeFile()
 	in.seekg(0, in.end);
 	std::streamsize size = in.tellg();
 	in.seekg(0, std::ios::beg);
-	cout << "\nFILE SIZE = " << size << endl;
+	//cout << "\nFILE SIZE = " << size << endl;
 	in.close();
 	return size;
 }
@@ -165,91 +191,87 @@ void DES::encrypt()
 	};
 	int position[2] = {0,0}, tmp=0;
 	key_extension();
-	if (bigSize)
+
+	for (int jt = 0; jt < fileSize / 640 + 1; jt++) //получать и шифровать блоки пока не закончится исходный файл
 	{
-		for (int iit = 0; iit < (fileSize / 640 + 1); iit++)
+		get_data();
+		for (int i = 0; i < receivedBlocks; i++) //шифрование считанных блоков
 		{
-			get_data();
-			for (int i = 0; i < 10; i++) //шифрование 10 блоков исходного текста
+			initial_permutation(i);
+
+			for (int j = 0; j < 32; j++)//разделить блок на два подблока по 32 бита
 			{
-				initial_permutation(i);
-
-				for (int j = 0; j < 32; j++)//разделить блок на два подблока по 32 бита
-				{
-					leftBlock.set(j, data[i].test(j));
-					rightBlock.set(j, data[i].test(j + 32));
-				}
-				for (int j = 0; j < 16; j++)//16 раундов шифрования
-				{
-					TMPblock48 = expanding_permutation(rightBlock);
-
-					TMPblock48 ^= RoundKey[j]; // XOR операция над раундовым ключом и подблоком
-
-					for (int it = 0; it < 48; it++) //разбиение 48-битного блока на 8 S-блоков по 6 бит
-					{
-						if (it < 6) Sblock6[0].set(it, TMPblock48.test(it));
-						if (it >= 6 && it < 12) Sblock6[1].set(it - 6, TMPblock48.test(it));
-						if (it >= 12 && it < 18) Sblock6[2].set(it - 12, TMPblock48.test(it));
-						if (it >= 18 && it < 24) Sblock6[3].set(it - 18, TMPblock48.test(it));
-						if (it >= 24 && it < 30) Sblock6[4].set(it - 24, TMPblock48.test(it));
-						if (it >= 30 && it < 36) Sblock6[5].set(it - 30, TMPblock48.test(it));
-						if (it >= 36 && it < 42) Sblock6[6].set(it - 36, TMPblock48.test(it));
-						if (it >= 42 && it < 48) Sblock6[7].set(it - 42, TMPblock48.test(it));
-					}
-
-					for (int it = 0; it < 8; it++) //получение перестановкой 4-битовых S-блоков
-					{
-						// определить число из таблицы
-						if (Sblock6[it][0] == 0 && Sblock6[it][5] == 0)  position[0] = 0; //номер строки
-						if (Sblock6[it][0] == 0 && Sblock6[it][5] == 1)  position[0] = 1; //номер строки
-						if (Sblock6[it][0] == 1 && Sblock6[it][5] == 0)  position[0] = 2; //номер строки
-						if (Sblock6[it][0] == 1 && Sblock6[it][5] == 1)  position[0] = 3; //номер строки
-
-
-						for (int _it = 1; _it < 5; _it++) //номер столбца в двоичной СС
-						{
-							tmp = tmp * 10 + Sblock6[it].test(_it);
-						}
-						position[1] = get_dec(tmp); //номер столбца в 10 СС
-
-						Sblock4[it] = S_BOX[it][position[0]][position[1]]; //задаем значение 4-битового битсета /не факт что так сработает конс. присваивания битсета/
-					}
-
-					//объединение восьми 4-битовых блоков в 32-битный блок
-					int tmpB_it = 0;
-					for (int it = 0; it < 8; it++)
-					{
-						for (int _it = 0; _it < 4; _it++)
-						{
-							TMPblock32[0].set(tmpB_it, Sblock6[it].test(_it));
-							tmpB_it++;
-						}
-					}
-
-					TMPblock32[1] = TMPblock32[0];    //перестановка после S-блоков
-					for (int it = 0; it < 32; it++)
-					{
-						TMPblock32[0].set(it, TMPblock32[1].test(P[it] - 1));
-					}
-
-
-					leftBlock ^= TMPblock32[0]; //XOR операция левого и правого блока(после преобразований правого)
-
-					if (j == 15) break; //если это не последний раунд, то меняем местами левый и правый блок
-					else {
-						for (int it = 0; it < 32; it++)
-						{
-							TMPblock32[0] = leftBlock;
-							leftBlock = rightBlock;
-							rightBlock = TMPblock32[0];
-						}
-					}
-				}
-
-				finaly_permutation(i);
-
-				print_data();
+				leftBlock.set(j, data[i].test(j));
+				rightBlock.set(j, data[i].test(j + 32));
 			}
+			for (int j = 0; j < 16; j++)//16 раундов шифрования
+			{
+				TMPblock48 = expanding_permutation(rightBlock);
+
+				TMPblock48 ^= RoundKey[j]; // XOR операция над раундовым ключом и подблоком
+
+				for (int it = 0; it < 48; it++) //разбиение 48-битного блока на 8 S-блоков по 6 бит
+				{
+					if (it < 6) Sblock6[0].set(it, TMPblock48.test(it));
+					if (it >= 6 && it < 12) Sblock6[1].set(it - 6, TMPblock48.test(it));
+					if (it >= 12 && it < 18) Sblock6[2].set(it - 12, TMPblock48.test(it));
+					if (it >= 18 && it < 24) Sblock6[3].set(it - 18, TMPblock48.test(it));
+					if (it >= 24 && it < 30) Sblock6[4].set(it - 24, TMPblock48.test(it));
+					if (it >= 30 && it < 36) Sblock6[5].set(it - 30, TMPblock48.test(it));
+					if (it >= 36 && it < 42) Sblock6[6].set(it - 36, TMPblock48.test(it));
+					if (it >= 42 && it < 48) Sblock6[7].set(it - 42, TMPblock48.test(it));
+				}
+
+				for (int it = 0; it < 8; it++) //получение перестановкой 4-битовых S-блоков
+				{
+					// определить число из таблицы
+					if (Sblock6[it][0] == 0 && Sblock6[it][5] == 0)  position[0] = 0; //номер строки
+					if (Sblock6[it][0] == 0 && Sblock6[it][5] == 1)  position[0] = 1; //номер строки
+					if (Sblock6[it][0] == 1 && Sblock6[it][5] == 0)  position[0] = 2; //номер строки
+					if (Sblock6[it][0] == 1 && Sblock6[it][5] == 1)  position[0] = 3; //номер строки
+
+
+					for (int _it = 1; _it < 5; _it++) //номер столбца в двоичной СС
+					{
+						tmp = tmp * 10 + Sblock6[it].test(_it);
+					}
+					position[1] = get_dec(tmp); //номер столбца в 10 СС
+
+					Sblock4[it] = S_BOX[it][position[0]][position[1]]; //задаем значение 4-битового битсета /не факт что так сработает конс. присваивания битсета/
+				}
+
+				//объединение восьми 4-битовых блоков в 32-битный блок
+				int tmpB_it = 0;
+				for (int it = 0; it < 8; it++)
+				{
+					for (int _it = 0; _it < 4; _it++)
+					{
+						TMPblock32[0].set(tmpB_it, Sblock6[it].test(_it));
+						tmpB_it++;
+					}
+				}
+
+				TMPblock32[1] = TMPblock32[0];    //перестановка после S-блоков
+				for (int it = 0; it < 32; it++)
+				{
+					TMPblock32[0].set(it, TMPblock32[1].test(P[it] - 1));
+				}
+
+
+				leftBlock ^= TMPblock32[0]; //XOR операция левого и правого блока(после преобразований правого)
+
+				if (j == 15) break; //если это не последний раунд, то меняем местами левый и правый блок
+				else {
+
+					TMPblock32[0] = leftBlock;
+					leftBlock = rightBlock;
+					rightBlock = TMPblock32[0];
+				}
+			}
+
+			finaly_permutation(i);
+
+			print_data();
 		}
 	}
 }
@@ -345,13 +367,52 @@ int DES::get_dec(int count)
 
 void DES::print_data()
 {
-	ofstream out("OUTPUT.txt", std::ios::binary | ios::app);
-	for (int i = 0; i < 10; i++)
+	ofstream outHEX("OUTPUT_HEX.txt", std::ios::binary | ios::app);
+	/*ofstream out("OUTPUT.txt", std::ios::binary | ios::app);
+	for (int i = 0; i <= receivedBlocks; i++)
 	{
 		for (int j = 0; j < 64; j++)
 		{
 			out << data[i][j];
 		}
+		out << endl;
+	}*/
+
+	int tmp = 0, p=0, it=0;
+	for (int i = 0; i <= receivedBlocks; i++)
+	{
+		for (int j = 0; j <=60; j+=4)
+		{
+			tmp = 0;
+			for (int t = 0; t < 4; t++)
+			{
+				p = data[i][j+t];
+				tmp = tmp + (p * pow(2, 3 - t));
+			}
+			if (tmp > 9)
+			{
+				if (tmp == 10) outHEX << 'A';
+				if (tmp == 11) outHEX << 'B';
+				if (tmp == 12) outHEX << 'C';
+				if (tmp == 13) outHEX << 'D';
+				if (tmp == 14) outHEX << 'E';
+				if (tmp == 15) outHEX << 'F';
+			}
+			else if (tmp < 10) {
+				outHEX << tmp << ' ';
+			}
+		}
+		outHEX << endl;
 	}
+	outHEX.close();
+}
+
+int64_t DES::sizeEncrFile()
+{
+	ifstream out("OUTPUT_HEX.txt", std::ios::binary);
+	out.seekg(0, in.end);
+	std::streamsize size = out.tellg();
+	out.seekg(0, std::ios::beg);
 	out.close();
+	return size;
 }

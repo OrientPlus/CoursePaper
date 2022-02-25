@@ -66,3 +66,4 @@ dkms.conf
 *.iobj
 *.json
 *.vcxproj.*
+*.txt
