@@ -8,6 +8,7 @@ int main()
 	auto start_time = std::chrono::steady_clock::now();
 	DES des;
 	des.encrypt();
+	des.decrypt();
 	auto end_time = std::chrono::steady_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 	std::cout << "\nExecution time: " << elapsed.count() / 1000 << " sec\n";
