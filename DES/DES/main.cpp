@@ -11,10 +11,10 @@ int main()
 	des.decrypt();
 	auto end_time = std::chrono::steady_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-	std::cout << "\nExecution time: " << elapsed.count() / 1000 << " sec\n";
+	std::cout << "\nExecution time: " << elapsed.count()  << " millisec\n";
 	
 	int64_t sizeFile = des.sizeEncrFile();
-	std::cout << "Size of file: " << sizeFile/1024 << " Kbytes\n";
+	std::cout << "Size of encrypted file: " << sizeFile/1024 + 1 << " Kbytes\n";
 	system("pause");
 	return 0;
 }

@@ -15,16 +15,8 @@ using namespace std;
 class DES
 {
 public:
-
-	void initial_file();
 	void encrypt();
 	void decrypt();
-	int64_t getSizeFile();
-	void initial_permutation();
-	void finaly_permutation();
-	bitset<48> expanding_permutation(bitset<32> &block);
-	void key_extension();
-	int conv_to_dec(int tmp);
 	int64_t sizeEncrFile();
 	
 private:
@@ -32,10 +24,21 @@ private:
 	ofstream out;
 	int64_t fileSize = 0;
 	bitset<64> data;
-	bitset<64> key = 0x1122334455667788;
+	bitset<64> key = 0b0000000001010011010011000101010000100101000001001010111101100001;
 	bitset<48> RoundKey[16];
 	bitset<32> leftBlock, rightBlock;
-	string path;
+	string path, Enc_filename;
 	bool bigSize=false;
 	int receivedBlocks = 0;
+
+	void IP_first();
+	void IP_second();
+	bitset<48> EP(bitset<32>& block);
+	void key_extension();
+	int conv_to_dec(int tmp);
+	void init_file();
+	void round(int j, bool flag);
+	void apply_Sbox(bitset<6>* Sblock6, bitset<4>* Sblock4);
+	bitset<32> block_convertion(bitset<32> BLOCK, bitset<48> R_key);
+	int64_t getSizeFile();
 };

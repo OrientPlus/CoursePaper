@@ -8,6 +8,17 @@
 #define ENCRYPTION true
 #define DECRYPTION false
 
+std::ofstream debug("C://Users/gutro/Desktop/GIT 2.0/Курсовая/Project1/Project1/debug/2EP.txt", std::ios::app);
+std::ofstream debug2("C://Users/gutro/Desktop/GIT 2.0/Курсовая/Project1/Project1/debug/1gettedDATA.txt", std::ios::app);
+std::ofstream debug3("C://Users/gutro/Desktop/GIT 2.0/Курсовая/Project1/Project1/debug/3XOR_KEY.txt", std::ios::app);
+std::ofstream debug4("C://Users/gutro/Desktop/GIT 2.0/Курсовая/Project1/Project1/debug/4SBOX.txt", std::ios::app);
+std::ofstream debug5("C://Users/gutro/Desktop/GIT 2.0/Курсовая/Project1/Project1/debug/5LAST_PERM.txt", std::ios::app);
+std::ofstream debug6("C://Users/gutro/Desktop/GIT 2.0/Курсовая/Project1/Project1/debug/6AFTER_XOR.txt", std::ios::app);
+std::ofstream debug7("C://Users/gutro/Desktop/GIT 2.0/Курсовая/Project1/Project1/debug/7ROUND_KEY.txt", std::ios::app);
+std::ofstream debug8("C://Users/gutro/Desktop/GIT 2.0/Курсовая/Project1/Project1/debug/8KEY.txt", std::ios::app);
+std::string strr;
+static int count = 0;
+
 using Block = std::bitset<64>;
 using HalfBlock = std::bitset<32>;
 using uint = unsigned int;
@@ -36,6 +47,8 @@ private:
 	void KeyShiftToRight(int);
 
 public:
+	void print_some_block(std::string str);
+
 	void encryption(byte[], unsigned long long);
 	void decryption(byte[], unsigned long long);
 	void fileEncryption(std::string, std::string, unsigned long long);
@@ -62,14 +75,10 @@ namespace _DES {
 
 	//Permutation of key compression
 	const __int8 perm2[48] = {
-			13, 16, 10, 23,  0,  4,
-			 2, 27, 14,  5, 20,  9,
-			22, 18, 11,  3, 25,  7,
-			15,  6, 26, 19, 12,  1,
-			40, 51, 30, 36, 46, 54,
-			29, 39, 50, 44, 32, 47,
-			43, 48, 38, 55, 33, 52,
-			45, 41, 49, 35, 28, 31
+			13, 16, 10, 23, 0, 4, 2, 27, 14, 5, 20, 9,
+		22, 18, 11, 3, 25, 7, 15, 6, 26, 19, 12, 1,
+		40, 51, 30, 37, 46, 54, 29, 39, 50, 44, 32, 47,
+		43, 48, 38, 55, 33, 52, 45, 41, 49, 35, 28, 31
 	};
 
 	//IP first
@@ -86,14 +95,14 @@ namespace _DES {
 
 	//P box
 	const __int8 perm4[48] = {
-			31,  0,  1,  2,  3,  4,
-			 3,  4,  5,  6,  7,  8,
-			 7,  8,  9, 10, 11, 12,
-			11, 12, 13, 14, 15, 16,
-			15, 16, 17, 18, 19, 20,
-			19, 20, 21, 22, 23, 24,
-			23, 24, 25, 26, 27, 28,
-			27, 28, 29, 30, 31,  0
+			31, 0, 1, 2, 3, 4,
+		3, 4, 5, 6, 7, 8,
+		7, 8, 9, 10, 11, 12,
+		11, 12, 13, 14, 15, 16,
+		15, 16, 17, 18, 19, 20,
+		19, 20, 21, 22, 23, 24,
+		23, 24, 25, 26, 27, 28,
+		27, 28, 29, 30, 31, 0
 	};
 	//P box in i-round
 	const __int8 perm5[32] = {
@@ -211,6 +220,10 @@ std::bitset<48> DES::GenerateKeyI(int NumberRound, bool Flag)
 	{
 		Result[i] = CDKeyBitset[_DES::perm2[i]];
 	}
+	//-------------------------------------------------------
+	strr = Result.to_string();
+	debug8 << strr << std::endl;
+	//----------------------------------------------------------
 
 	return Result;
 }
@@ -272,6 +285,10 @@ void DES::KeyToCDKeyBitset(unsigned long long _Key)
 		Res |= ((KeyBitset.to_ullong() & Sh) >> (64 - G[i])) << (56 - i - 1);
 	}
 	CDKeyBitset = Res;
+	//-------------------------------------------
+	//strr = CDKeyBitset.to_string();
+	//debug8 << strr <<  std::endl;
+	//-------------------------------------------
 
 	for (int i = 0; i < 14; i++)
 	{
@@ -292,9 +309,23 @@ Block DES::FanoRound(Block _Block, std::bitset<48> _KeyI, bool Flag)
 		LeftBlock[i] = _Block[i];
 	}
 	Block Result;
+	HalfBlock temp;
 	if (Flag == ENCRYPTION)
 	{
-		LeftBlock ^= F(RightBlock, _KeyI);
+		//---------------------------------------------------------------
+		strr = LeftBlock.to_string();
+		debug6 << "\nBefore xor:" << strr << " //LEFT" << std::endl;
+		//---------------------------------------------------------------
+		temp = F(RightBlock, _KeyI);
+		//---------------------------------------------------------------
+		strr = temp.to_string();
+		debug6 << "AFTER func:" << strr << " //RIGHT" << std::endl;
+		//---------------------------------------------------------------
+		LeftBlock ^= temp;
+		//---------------------------------------------------------------
+		strr = LeftBlock.to_string();
+		debug6 << "After  xor:" << strr << std::endl;
+		//---------------------------------------------------------------
 		for (int i = 0; i < 32; i++)
 		{
 			Result[i] = RightBlock[i];
@@ -323,7 +354,19 @@ HalfBlock DES::F(HalfBlock _RightBlock, std::bitset<48> _KeyI)
 	std::bitset<48> RightHalfBlockWithPBox;
 	for (uint i = 0; i < 48; i++)
 		RightHalfBlockWithPBox[i] = _RightBlock[_DES::perm4[i]];
+	//----------------------------------------------------------------------------
+	strr = RightHalfBlockWithPBox.to_string();
+	debug << "::"  << strr << std::endl;
+	//----------------------------------------------------------------------------
+
 	RightHalfBlockWithPBox ^= _KeyI;
+	//----------------------------------------------------------------------------
+	strr = RightHalfBlockWithPBox.to_string();
+	debug3 << "::" << strr << std::endl;
+
+	strr = _KeyI.to_string();
+	debug7 << strr << std::endl;
+	//----------------------------------------------------------------------------
 	std::vector<std::bitset<6>> Bbox;
 
 	for (uint i = 0; i < 8; i++)
@@ -345,11 +388,17 @@ HalfBlock DES::F(HalfBlock _RightBlock, std::bitset<48> _KeyI)
 		std::bitset<4> LineBitSet;
 		for (int j = 1; j < 5; j++)
 			LineBitSet[j - 1] = Bbox[i][j];
-
+		//int Column;
+		//if (ColumnBitSet[0] == 0 && ColumnBitSet[1] == 0)  Column = 0; //номер строки
+		//else if (ColumnBitSet[0] == 0 && ColumnBitSet[1] == 1)  Column = 1; //номер строки
+		//else if (ColumnBitSet[0] == 1 && ColumnBitSet[1] == 0)  Column = 2; //номер строки
+		//else if (ColumnBitSet[0] == 1 && ColumnBitSet[1] == 1)  Column = 3; //номер строки
 		byte Column = ColumnBitSet.to_ullong();
 		byte Line = LineBitSet.to_ullong();
 
 		std::bitset<4> SBoxBitSet = _DES::sbox[i][Column][Line];
+		strr = SBoxBitSet.to_string();
+		debug4 << strr << std::endl;
 
 		for (int j = 0; j < 4; j++)
 		{
@@ -363,68 +412,64 @@ HalfBlock DES::F(HalfBlock _RightBlock, std::bitset<48> _KeyI)
 	{
 		Result[i] = Tmp[_DES::perm5[i]];
 	}
+	strr = Result.to_string();
+	debug5 << strr << std::endl;
 	return Result;
 }
 
 void DES::KeyShiftToLeft(int ShiftRound)
 {
 	int ShiftValue = _DES::sc[ShiftRound];
-	std::bitset<28> Ci;
-	std::bitset<28> Di;
-	if (ShiftValue == 2)
+	std::bitset<28> tmpK1, tmpK2;
+
+	for (int i = 0; i < 28; i++) //Получение промежуточного 56-битового ключа в виде двух ключей по 28 бит
 	{
-		Ci[27] = CDKeyBitset[29];
-		Di[27] = CDKeyBitset[1];
-		Ci[26] = CDKeyBitset[28];
-		Di[26] = CDKeyBitset[0];
+		tmpK1[i] = CDKeyBitset[i];
+		tmpK2[i] = CDKeyBitset[i+28];
 	}
-	if (ShiftValue == 1)
+	if (ShiftRound == 0| ShiftRound == 1| ShiftRound == 8| ShiftRound == 15)
 	{
-		Ci[27] = CDKeyBitset[28];
-		Di[27] = CDKeyBitset[0];
+		tmpK1 <<= 1;
+		tmpK2 <<= 1;
+	}
+	else
+	{
+		tmpK1 <<= 2;
+		tmpK2 <<= 2;
 	}
 
-	for (int i = 27 - ShiftValue; i >= 0; i--)
-	{
-		Di[i] = CDKeyBitset[i + ShiftValue];
-		Ci[i] = CDKeyBitset[i + ShiftValue + 28];
-	}
 	for (int i = 0; i < 28; i++)
 	{
-		CDKeyBitset[i] = Di[i];
-		CDKeyBitset[i + 28] = Ci[i];
+		CDKeyBitset[i] = tmpK1[i];
+		CDKeyBitset[i + 28] = tmpK2[i];
 	}
 }
 
 void DES::KeyShiftToRight(int ShiftRound)
 {
 	int ShiftValue = _DES::sc[ShiftRound];
-	if (ShiftRound == 0)
-		ShiftValue = 0;
-	std::bitset<28> Ci;
-	std::bitset<28> Di;
-	if (ShiftValue == 2)
+	std::bitset<28> tmpK1, tmpK2;
+
+	for (int i = 0; i < 28; i++) //Получение промежуточного 56-битового ключа в виде двух ключей по 28 бит
 	{
-		Ci[1] = CDKeyBitset[55];
-		Di[1] = CDKeyBitset[27];
-		Ci[0] = CDKeyBitset[54];
-		Di[0] = CDKeyBitset[26];
+		tmpK1[i] = CDKeyBitset[i];
+		tmpK2[i] = CDKeyBitset[i + 28];
 	}
-	if (ShiftValue == 1)
+	if (ShiftRound == 0 | ShiftRound == 1 | ShiftRound == 8 | ShiftRound == 15)
 	{
-		Ci[0] = CDKeyBitset[55];
-		Di[0] = CDKeyBitset[27];
+		tmpK1 >>= 1;
+		tmpK2 >>= 1;
+	}
+	else
+	{
+		tmpK1 >>= 2;
+		tmpK2 >>= 2;
 	}
 
-	for (int i = ShiftValue; i < 28; i++)
-	{
-		Di[i] = CDKeyBitset[i - ShiftValue];
-		Ci[i] = CDKeyBitset[i - ShiftValue + 28];
-	}
 	for (int i = 0; i < 28; i++)
 	{
-		CDKeyBitset[i] = Di[i];
-		CDKeyBitset[i + 28] = Ci[i];
+		CDKeyBitset[i] = tmpK1[i];
+		CDKeyBitset[i + 28] = tmpK2[i];
 	}
 }
 
@@ -452,35 +497,31 @@ void DES::fileEncryption(std::string _FileIn, std::string _FileOut, unsigned lon
 	KeyToCDKeyBitset(_Key);
 
 	std::bitset<48> RoundKeys[16];
-	std::string temp;
 
 	for (int i = 0; i < 16; i++)
 	{
 		RoundKeys[i] = GenerateKeyI(i, ENCRYPTION);
 	}
-
+	/*debug2 << "ПОЛУЧЕННЫЕ ДАННЫЕ:\n";
+	debug2 << RoundKeys[0].to_string() << std::endl;*/
 	while (!Input.eof())
 	{
 		std::bitset<64> Line;
 		Input.read((char*)&Line, sizeof(std::bitset<64>));
-		temp = Line.to_string();
-		std::cout << "DATA:\n";
-		std::cout << temp << std::endl;
+		
+		strr = Line.to_string();
+		debug2 << strr << std::endl;
+		
 		for (int i = 0; i < 16; i++)
 		{
 			Line = FanoRound(Line, RoundKeys[i], ENCRYPTION);
 		}
-		temp = Line.to_string();
-		std::cout << "ENCRYPTED DATA:\n";
-		std::cout << temp << std::endl;
+		
 		Output.write((char*)&Line, sizeof(std::bitset<64>));
 		Line = 0;
 	}
 	Input.close();
 	Output.close();
-
-
-
 }
 
 void DES::fileDecryption(std::string _FileIn, std::string _FileOut, unsigned long long _Key)
@@ -511,3 +552,4 @@ void DES::fileDecryption(std::string _FileIn, std::string _FileOut, unsigned lon
 	Input.close();
 	Output.close();
 }
+
