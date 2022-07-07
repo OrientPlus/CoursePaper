@@ -4,32 +4,23 @@
 #define ENCR true
 #define DECR false
 
-//std::ofstream debug("C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/debugDES/2EP_DES.txt", std::ios::app);
-//std::ofstream debug2("C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/debugDES/1gettedDATA_DES.txt", std::ios::app);
-//std::ofstream debug3("C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/debugDES/3XOR_KEY_DES.txt", std::ios::app);
-//std::ofstream debug4("C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/debugDES/4SBOX_DES.txt", std::ios::app);
-//std::ofstream debug5("C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/debugDES/5LAST_PERM_DES.txt", std::ios::app);
-//std::ofstream debug6("C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/debugDES/6AFTER_XOR_DES.txt", std::ios::app);
-//std::ofstream debug7("C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/debugDES/7ROUND_KEY_DES.txt", std::ios::app);
-//std::ofstream debug8("C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/debugDES/8KEY_DES.txt", std::ios::app);
-//string str;
 
 void DES::init_file()
 {
-	path = "data.txt";
+	ifstream in;
+	path = "data.pdf";
 	int choise = 1;
 	//открытие файла для чтения иходного текста и файла для записи шифротекста
 	cout << "1 - Use default path (C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/data.txt) \n2 - Enter path\n=>";
 
 	//cin >> choise;
 	if (choise == 1) 
-		ifstream in(path, std::ios::binary);
+		in.open(path, std::ios::binary);
 	else {
 		cout << "\nEnter path data: ";
 		cin >> path;
-		ifstream in(path, std::ios::binary);
+		in.open(path, std::ios::binary);
 	}
-	in.open(path);
 	if (!in.is_open())
 	{
 		cout << "\nFile cannot open!" << endl;
@@ -37,17 +28,7 @@ void DES::init_file()
 		exit(-10);
 	}
 	in.close();
-}
-
-int64_t DES::getSizeFile()
-{
-	ifstream in(path, std::ios::binary);
-	in.seekg(0, in.end);
-	std::streamsize size = in.tellg();
-	in.seekg(0, std::ios::beg);
-	//cout << "\nFILE SIZE = " << size << endl;
-	in.close();
-	return size;
+	sizeSourceFile = getSizeFile(path);
 }
 
 void DES::IP_first()
@@ -104,14 +85,12 @@ void DES::encrypt()
 	while (!in.eof()) 
 	{
 		in.read((char*)&data, sizeof(bitset<64>));
-	/*	str = data.to_string();
-		debug2 << "ПОЛУЧЕННЫЕ ДАННЫЕ:\n" << str << endl;*/
 		for (int i=0; i<16; i++)
 			round(i, ENCR);
 		
 		output.write((char*)&data, sizeof(bitset<64>));
 	}
-	//output.write("\0", sizeof(char));
+	sizeEncFile = getSizeFile(Enc_filename);
 }
 
 bitset<32> DES::block_convertion(bitset<32> BLOCK, bitset<48> R_key)
@@ -197,20 +176,7 @@ void DES::round(int j, bool flag)
 			leftBlock[i] = data[i];
 			rightBlock[i] = data[i + 32];
 		}
-		////-------------------------------------------
-		//str = leftBlock.to_string();
-		//debug6 << "\nBefore xor:" << str << " //LEFT" << std::endl;
-		////-------------------------------------------
-		temp = block_convertion(rightBlock, RoundKey[j]);
-		////---------------------------------------------------------------
-		//str = temp.to_string();
-		//debug6 << "AFTER func:" << str << " //RIGHT" << std::endl;
-		////---------------------------------------------------------------
-		leftBlock ^= temp;
-		////---------------------------------------------------------------
-		//str = leftBlock.to_string();
-		//debug6 << "After  xor:" << str << std::endl;
-		////---------------------------------------------------------------
+		leftBlock ^= block_convertion(rightBlock, RoundKey[j]);
 
 		for (int i = 0; i < 32; i++)
 		{
@@ -224,28 +190,18 @@ void DES::round(int j, bool flag)
 	{
 		IP_first();
 
-		for (int j = 0; j < 32; j++)
+		for (int i = 0; i < 32; i++)
 		{
-			leftBlock.set(j, data.test(j));
-			rightBlock.set(j, data.test(j + 32));
+			leftBlock[i] = data[i];
+			rightBlock[i] = data[i + 32];
 		}
 
 		rightBlock ^= block_convertion(leftBlock, RoundKey[15-j]);
 
-		/*if (j == 15)
-		{
-			for (int i = 0; i < 32; i++)
-			{
-				data.set(i, leftBlock.test(i));
-				data.set(i + 32, rightBlock.test(i));
-			}
-			IP_first();
-			return;
-		}*/
 		for (int i = 0; i < 32; i++)
 		{
-			data.set(i, rightBlock.test(i));
-			data.set(i + 32, leftBlock.test(i));
+			data[i] = rightBlock[i];
+			data[i + 32] = leftBlock[i];
 		}
 		IP_second();
 	}
@@ -344,6 +300,7 @@ void DES::decrypt()
 
 		output.write((char*)&data, sizeof(bitset<64>));
 	}
+	sizeDecFile = getSizeFile(path);
 }
 
 bitset<48> DES::EP(bitset<32> &block)
@@ -486,12 +443,12 @@ int DES::conv_to_dec(int count)
 	}
 }
 
-int64_t DES::sizeEncrFile()
+int64_t DES::getSizeFile(string path_)
 {
-	ifstream out(Enc_filename);
-	out.seekg(0, in.end);
-	std::streamsize size = out.tellg();
-	out.seekg(0, std::ios::beg);
-	out.close();
-	return size;
+	fstream file(path_);
+	file.seekg(0, file.end);
+	streamsize size = file.tellg();
+	file.seekg(0, std::ios::beg);
+	file.close();
+	return size / 1024 + 1;
 }

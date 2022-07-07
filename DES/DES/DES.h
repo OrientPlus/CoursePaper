@@ -17,19 +17,16 @@ class DES
 public:
 	void encrypt();
 	void decrypt();
-	int64_t sizeEncrFile();
 	
+	int64_t sizeEncFile = 0, sizeDecFile = 0, sizeSourceFile = 0;
 private:
-	ifstream in;
-	ofstream out;
 	int64_t fileSize = 0;
 	bitset<64> data;
 	bitset<64> key = 0b0000000001010011010011000101010000100101000001001010111101100001;
 	bitset<48> RoundKey[16];
 	bitset<32> leftBlock, rightBlock;
 	string path, Enc_filename;
-	bool bigSize=false;
-	int receivedBlocks = 0;
+
 
 	void IP_first();
 	void IP_second();
@@ -40,5 +37,5 @@ private:
 	void round(int j, bool flag);
 	void apply_Sbox(bitset<6>* Sblock6, bitset<4>* Sblock4);
 	bitset<32> block_convertion(bitset<32> BLOCK, bitset<48> R_key);
-	int64_t getSizeFile();
+	int64_t getSizeFile(string path_);
 };

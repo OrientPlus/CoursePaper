@@ -66,4 +66,7 @@ dkms.conf
 *.iobj
 *.json
 *.vcxproj.*
+*.vcxproj
 *.txt
+*.vsidx
+*.lock
