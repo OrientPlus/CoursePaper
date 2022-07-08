@@ -112,20 +112,9 @@ bitset<32> DES::block_convertion(bitset<32> BLOCK, bitset<48> R_key)
 
 
 	TMPblock48 = EP(BLOCK);
-	////-----------------------------------------------
-	//str = TMPblock48.to_string();
-	//debug << "::" << str << endl;
-	////-----------------------------------------------
 
 	// XOR операция над раундовым ключом и подблоком
 	TMPblock48 ^= R_key;
-	////-----------------------------------------------
-	//str = R_key.to_string();
-	//debug7 << str << endl;
-	//
-	//str = TMPblock48.to_string();
-	//debug3 << str << endl;
-	////-----------------------------------------------
 	//разбиение 48-битного блока на 8 S-блоков по 6 бит
 	for (int it = 0; it < 48; it++)
 	{
@@ -157,10 +146,6 @@ bitset<32> DES::block_convertion(bitset<32> BLOCK, bitset<48> R_key)
 	{
 		TMPblock32[0].set(it, TMPblock32[1].test(P[it]));
 	}
-	////-----------------------------------------------
-	//str = TMPblock32[0].to_string();
-	//debug5 << str << endl;
-	////-----------------------------------------------
 	return TMPblock32[0];
 }
 
