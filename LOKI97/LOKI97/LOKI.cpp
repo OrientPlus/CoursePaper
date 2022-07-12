@@ -6,9 +6,9 @@ void LOKI::init_file()
 	path = "data.pdf";
 	int choise = 1;
 	//открытие файла для чтения иходного текста и файла для записи шифротекста
-	cout << "1 - Use default path (C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/data.txt) \n2 - Enter path\n=>";
+	cout << "1 - Use default path (C://Users/.../data.pdf) \n2 - Enter path\n=>";
 
-	//cin >> choise;
+	cin >> choise;
 	if (choise == 1)
 		in.open(path, std::ios::binary);
 	else {
@@ -25,17 +25,38 @@ void LOKI::init_file()
 	in.close();
 
 	sizeSourceFile = getSizeFile(path);
+
+	cout << "\nEnter key(hex format): ";
+	string hex_str_key, bin_str_key;
+	try {
+		cin >> hex_str_key;
+		bin_str_key = convert_string(hex_str_key);
+		key = bitset<256>(string(bin_str_key));
+	}
+	catch (std::exception &ex)
+	{
+		cout << "\nINPUT ERROR: " << ex.what() << endl;
+		system("pause");
+		exit(-15);
+	}
 }
 
 void LOKI::encrypt()
 {
 	init_file();
+
+	auto start_time = chrono::steady_clock::now();
+
 	Enc_filename = path;
 	Enc_filename.insert(0, "ENC_");
 	ifstream in(path, std::ios::binary);
 	ofstream output(Enc_filename, std::ios::binary);
 
-	key_extension();
+	if (!key_flag)
+	{
+		key_flag = true;
+		key_extension();
+	}
 
 	//получать и шифровать блоки пока не закончится исходный файл
 	while (!in.eof())
@@ -48,13 +69,22 @@ void LOKI::encrypt()
 		output.write((char*)&data, sizeof(BLOCK_128));
 	}
 	sizeEncFile = getSizeFile(Enc_filename);
+	auto end_time = chrono::steady_clock::now();
+	exec_time_enc = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
 }
 
 void LOKI::decrypt()
 {
+	auto start_time = chrono::steady_clock::now();
 	path.insert(0, "DEC_");
 	ifstream in(Enc_filename, std::ios::binary);
 	ofstream output(path, std::ios::binary);
+
+	if (!key_flag)
+	{
+		key_flag = true;
+		key_extension();
+	}
 
 	//получать и шифровать блоки пока не закончится исходный файл
 	while (!in.eof())
@@ -66,6 +96,9 @@ void LOKI::decrypt()
 		output.write((char*)&data, sizeof(BLOCK_128));
 	}
 	sizeDecFile = getSizeFile(path);
+
+	auto end_time = chrono::steady_clock::now();
+	exec_time_dec = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
 }
 
 void LOKI::round(int j, bool flag)
@@ -101,6 +134,8 @@ void LOKI::round(int j, bool flag)
 void LOKI::key_extension()
 {
 	BLOCK_64 key_subBlock[4], temp;
+
+	check_key();
 
 	//разделяем ключ на 4 блока по 64 бит
 	for (int i = 0; i < 64; i++)
@@ -601,4 +636,101 @@ int64_t LOKI::getSizeFile(string path_)
 	file.seekg(0, std::ios::beg);
 	file.close();
 	return size/1024 + 1;
+}
+
+void LOKI::check_key()
+{
+	int pos = -1;
+	BLOCK_64 temp[4];
+	for (int i = 255; i >= 0; i--)
+	{
+		if (key.test(i) == 1)
+		{
+			pos = i;
+			break;
+		}
+	}
+
+	if (pos > 127 && pos < 192)
+	{
+		for (int i = 0; i < 64; i++)
+		{
+			temp[0][i] = key[i];
+			temp[1][i] = key[i + 64];
+			temp[2][i] = key[i + 128];
+		}
+		temp[3] = F(temp[0], temp[1]);
+
+		for (int i = 0; i < 64; i++)
+		{
+			key[i] = temp[0][i];
+			key[i + 64] = temp[1][i];
+			key[i + 128] = temp[2][i];
+			key[i + 192] = temp[3][i];
+		}
+		return;
+	}
+	else if (pos < 128)
+	{
+		for (int i = 0; i < 64; i++)
+		{
+			temp[0][i] = key[i];
+			temp[1][i] = key[i + 64];
+		}
+		temp[2] = F(temp[1], temp[0]);
+		temp[3] = F(temp[0], temp[1]);
+
+		for (int i = 0; i < 64; i++)
+		{
+			key[i] = temp[0][i];
+			key[i + 64] = temp[1][i];
+			key[i + 128] = temp[2][i];
+			key[i + 192] = temp[3][i];
+		}
+		return;
+	}
+	else
+		return;
+}
+
+string LOKI::convert_string(string &hex)
+{
+	string bin;
+	for (int i = 0; i != hex.length(); i++)
+	{
+		bin += hex_char_to_bin(hex[i]);
+	}
+	if (bin.size() > 256)
+		cout << "\nWARNING! The size of the entered key exceeds 256 bits. The key size will be trimmed to a possible 256!\n";
+	return bin;
+}
+
+const char* LOKI::hex_char_to_bin(char ch)
+{
+	ch = toupper(ch);
+	if ((ch < 48 || ch > 57) && (ch < 65 || ch > 90))
+	{
+		cout << "\nINPUT ERROR: the symbol is not included in the hexadecimal system!\n";
+		system("pause");
+		exit(10);
+	}
+	switch (toupper(ch))
+	{
+	case '0': return "0000";
+	case '1': return "0001";
+	case '2': return "0010";
+	case '3': return "0011";
+	case '4': return "0100";
+	case '5': return "0101";
+	case '6': return "0110";
+	case '7': return "0111";
+	case '8': return "1000";
+	case '9': return "1001";
+	case 'A': return "1010";
+	case 'B': return "1011";
+	case 'C': return "1100";
+	case 'D': return "1101";
+	case 'E': return "1110";
+	case 'F': return "1111";
+	}
 }

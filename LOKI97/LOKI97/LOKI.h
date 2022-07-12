@@ -5,6 +5,7 @@
 #include <bitset>
 #include <string>
 #include <stdint.h>
+#include <chrono>
 
 
 #define BLOCK_256 bitset<256>
@@ -17,6 +18,7 @@
 #define ENCR true
 #define DECR false
 
+typedef int64_t QWORD;
 typedef int16_t WORD;
 
 using namespace std;
@@ -26,11 +28,12 @@ class LOKI
 public:
 	void encrypt();
 	void decrypt();
+	chrono::milliseconds exec_time_dec, exec_time_enc;
 
 	int64_t sizeEncFile = 0, sizeDecFile = 0, sizeSourceFile = 0;
 private:
 	BLOCK_128 data;
-	BLOCK_256 key = 0xFFFDEEDAC8146351;
+	BLOCK_256 key;
 	BLOCK_64 RoundKey[48], 
 		leftBlock, rightBlock;
 	
@@ -39,6 +42,7 @@ private:
 	void init_file();
 	void round(int j, bool flag);
 	void key_extension();
+	void check_key();
 	BLOCK_64 KP(BLOCK_64 block, BLOCK_32 key);
 	BLOCK_64 F(BLOCK_64 block1, BLOCK_64 block2);
 	BLOCK_96 E(BLOCK_64);
@@ -50,4 +54,8 @@ private:
 
 	WORD my_pow(WORD word, int n);
 	int64_t getSizeFile(string path);
+	string convert_string(string &hex);
+	const char* hex_char_to_bin(char ch);
+
+	bool key_flag = false;
 };
