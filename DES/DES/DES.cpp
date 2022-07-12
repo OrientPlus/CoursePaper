@@ -286,10 +286,6 @@ void DES::apply_Sbox(bitset<6>* Sblock6, bitset<4>* Sblock4)
 		position[1] = conv_to_dec(tmp); //номер столбца в 10 СС
 
 		Sblock4[it] = S_BOX[it][position[0]][position[1]]; //задаем значение 4-битового битсета
-		////-----------------------------------------------
-		//str = Sblock4[it].to_string();
-		//debug4 << str << endl;
-		////-----------------------------------------------
 	}
 }
 
@@ -357,29 +353,12 @@ void DES::key_extension()
 		43, 48, 38, 55, 33, 52, 45, 41, 49, 35, 28, 31
 	};
 
-	////invert key
-	//bool tmp;
-	//for (int i = 0; i < 32; i++)
-	//{
-	//	tmp = key.test(i);
-	//	key.set(i, key.test(63-i));
-	//	key.set(63 - i, tmp);
-	//}
-	
 
-	//for (int i = 0; i < 28; i++) //Получение промежуточного 56-битового ключа в виде двух ключей по 28 бит
-	//{
-	//	tmpKey1[i] = key[P1[i] - 1];
-	//	tmpKey2[i] = key[P2[i] - 1];
-	//}
-
-	//ЦИКЛ ТОЛЬКО ДЛЯ ДЕБАГА
 	for (int i = 0; i < 28; i++) //Получение промежуточного 56-битового ключа в виде двух ключей по 28 бит
 	{
 		tmpKey1[i] = key[i];
 		tmpKey2[i] = key[i+28];
 	}
-	//ЦИКЛ ТОЛЬКО ДЛЯ ДЕБАГА
 
 	
 
@@ -404,10 +383,6 @@ void DES::key_extension()
 		{
 			RoundKey[i].set(j, tmpKEY56.test(RP[j]));
 		}
-		////-------------------------------------------
-		//str = RoundKey[i].to_string();
-		//debug8 << str << endl;
-		////-------------------------------------------
 	}
 }
 

@@ -23,7 +23,7 @@ public:
 private:
 	int64_t fileSize = 0;
 	bitset<64> data;
-	bitset<64> key = 0b0000000001010011010011000101010000100101000001001010111101100001;
+	bitset<64> key;
 	bitset<48> RoundKey[16];
 	bitset<32> leftBlock, rightBlock;
 	string path, Enc_filename;
