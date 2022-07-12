@@ -7,7 +7,7 @@
 #include <bitset>
 #include <vector>
 #include <windows.h>
-#include <cmath>
+#include <chrono>
 
 
 using namespace std;
@@ -18,6 +18,7 @@ public:
 	void encrypt();
 	void decrypt();
 	
+	chrono::milliseconds exec_time_dec, exec_time_enc;
 	int64_t sizeEncFile = 0, sizeDecFile = 0, sizeSourceFile = 0;
 private:
 	int64_t fileSize = 0;
@@ -38,4 +39,8 @@ private:
 	void apply_Sbox(bitset<6>* Sblock6, bitset<4>* Sblock4);
 	bitset<32> block_convertion(bitset<32> BLOCK, bitset<48> R_key);
 	int64_t getSizeFile(string path_);
+
+	string convert_string(string& hex);
+	const char* hex_char_to_bin(char ch);
+	bool key_flag = false;
 };

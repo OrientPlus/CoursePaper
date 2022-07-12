@@ -11,9 +11,9 @@ void DES::init_file()
 	path = "data.pdf";
 	int choise = 1;
 	//открытие файла для чтения иходного текста и файла для записи шифротекста
-	cout << "1 - Use default path (C://Users/gutro/Desktop/GIT 2.0/Курсовая/DES/DES/data.txt) \n2 - Enter path\n=>";
+	cout << "1 - Use default path (C://Users/gutro/.../data.pdf) \n2 - Enter path\n=>";
 
-	//cin >> choise;
+	cin >> choise;
 	if (choise == 1) 
 		in.open(path, std::ios::binary);
 	else {
@@ -29,6 +29,20 @@ void DES::init_file()
 	}
 	in.close();
 	sizeSourceFile = getSizeFile(path);
+
+	cout << "\nEnter key(hex format): ";
+	string hex_str_key, bin_str_key;
+	try {
+		cin >> hex_str_key;
+		bin_str_key = convert_string(hex_str_key);
+		key = bitset<64>(string(bin_str_key));
+	}
+	catch (std::exception& ex)
+	{
+		cout << "\nINPUT ERROR: " << ex.what() << endl;
+		system("pause");
+		exit(-15);
+	}
 }
 
 void DES::IP_first()
@@ -74,12 +88,19 @@ void DES::IP_second()
 void DES::encrypt()
 {
 	init_file();
+
+	auto start_time = chrono::steady_clock::now();
+
 	Enc_filename = path;
 	Enc_filename.insert(0, "ENC_");
 	ifstream in(path, std::ios::binary);
 	ofstream output(Enc_filename, std::ios::binary);
 
-	key_extension();
+	if (!key_flag)
+	{
+		key_flag = true;
+		key_extension();
+	}
 
 	//получать и шифровать блоки пока не закончится исходный файл
 	while (!in.eof()) 
@@ -91,6 +112,8 @@ void DES::encrypt()
 		output.write((char*)&data, sizeof(bitset<64>));
 	}
 	sizeEncFile = getSizeFile(Enc_filename);
+	auto end_time = chrono::steady_clock::now();
+	exec_time_enc = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
 }
 
 bitset<32> DES::block_convertion(bitset<32> BLOCK, bitset<48> R_key)
@@ -272,6 +295,7 @@ void DES::apply_Sbox(bitset<6>* Sblock6, bitset<4>* Sblock4)
 
 void DES::decrypt()
 {
+	auto start_time = chrono::steady_clock::now();
 	path.insert(0, "DEC_");
 	ifstream in(Enc_filename, std::ios::binary);
 	ofstream output(path, std::ios::binary);
@@ -286,6 +310,8 @@ void DES::decrypt()
 		output.write((char*)&data, sizeof(bitset<64>));
 	}
 	sizeDecFile = getSizeFile(path);
+	auto end_time = chrono::steady_clock::now();
+	exec_time_dec = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
 }
 
 bitset<48> DES::EP(bitset<32> &block)
@@ -436,4 +462,46 @@ int64_t DES::getSizeFile(string path_)
 	file.seekg(0, std::ios::beg);
 	file.close();
 	return size / 1024 + 1;
+}
+
+string DES::convert_string(string& hex)
+{
+	string bin;
+	for (int i = 0; i != hex.length(); i++)
+	{
+		bin += hex_char_to_bin(hex[i]);
+	}
+	if (bin.size() > 64)
+		cout << "\nWARNING! The size of the entered key exceeds 64 bits. The key size will be trimmed to a possible 64!\n";
+	return bin;
+}
+
+const char* DES::hex_char_to_bin(char ch)
+{
+	ch = toupper(ch);
+	if ((ch < 48 || ch > 57) && (ch < 65 || ch > 90))
+	{
+		cout << "\nINPUT ERROR: the symbol is not included in the hexadecimal system!\n";
+		system("pause");
+		exit(10);
+	}
+	switch (toupper(ch))
+	{
+	case '0': return "0000";
+	case '1': return "0001";
+	case '2': return "0010";
+	case '3': return "0011";
+	case '4': return "0100";
+	case '5': return "0101";
+	case '6': return "0110";
+	case '7': return "0111";
+	case '8': return "1000";
+	case '9': return "1001";
+	case 'A': return "1010";
+	case 'B': return "1011";
+	case 'C': return "1100";
+	case 'D': return "1101";
+	case 'E': return "1110";
+	case 'F': return "1111";
+	}
 }
